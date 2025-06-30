@@ -85,8 +85,6 @@ The tool supports various workout types:
 
 ## Credits
 
-## Credits
-
 This project incorporates ideas and prompt designs inspired by [openai-garmin-workout](https://github.com/veelenga/openai-garmin-workout), which is licensed under the MIT License.
 
 ## License
