@@ -82,3 +82,13 @@ The tool supports various workout types:
 ## Environment Variables
 
 - `GARTH_HOME`: Custom location for Garmin credentials (optional, defaults to `~/.garth`)
+
+## Credits
+
+## Credits
+
+This project incorporates ideas and prompt designs inspired by [openai-garmin-workout](https://github.com/veelenga/openai-garmin-workout), which is licensed under the MIT License.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
