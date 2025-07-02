@@ -48,7 +48,7 @@ def get_workout(workout_id: str) -> dict:
     return workout
 
 @mcp.tool
-def schedule_workout(workout_id: str, date: str) -> dict:
+def schedule_workout(workout_id: str, date: str) -> str:
     """
     Schedule a workout on Garmin Connect.
 
@@ -77,10 +77,10 @@ def schedule_workout(workout_id: str, date: str) -> dict:
     endpoint = SCHEDULE_WORKOUT_ENDPOINT.format(workout_id=workout_id)
     result = garth.connectapi(endpoint, method="POST", json=payload)
     workout_scheduled_id = result.get("scheduledWorkoutId")
-    if not workout_scheduled_id:
+    if workout_scheduled_id is None:
         raise Exception("Scheduling workout failed")
 
-    return workout_scheduled_id
+    return str(workout_scheduled_id)
 
 @mcp.tool
 def upload_workout(workout_data: dict) -> str:
@@ -107,7 +107,6 @@ def upload_workout(workout_data: dict) -> str:
         logger.info("Payload to be sent to Garmin Connect: %s", payload)
 
         # Create workout on Garmin Connect
-
         result = garth.connectapi("/workout-service/workout", method="POST", json=payload)
 
         # logging the result for debugging
@@ -115,10 +114,10 @@ def upload_workout(workout_data: dict) -> str:
 
         workout_id = result.get("workoutId")
 
-        if not workout_id:
+        if workout_id is None:
             raise Exception("No workout ID returned")
 
-        return workout_id
+        return str(workout_id)
 
     except Exception as e:
         raise Exception(f"Failed to upload workout to Garmin Connect: {str(e)}")
