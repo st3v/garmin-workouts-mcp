@@ -30,7 +30,7 @@ def list_workouts() -> dict:
         A dictionary containing a list of workouts.
     """
     workouts = garth.connectapi(LIST_WORKOUTS_ENDPOINT)
-    return workouts
+    return {"workouts": workouts}
 
 @mcp.tool
 def get_workout(workout_id: str) -> dict:
@@ -45,10 +45,10 @@ def get_workout(workout_id: str) -> dict:
     """
     endpoint = GET_WORKOUT_ENDPOINT.format(workout_id=workout_id)
     workout = garth.connectapi(endpoint)
-    return workout
+    return {"workout": workout}
 
 @mcp.tool
-def schedule_workout(workout_id: str, date: str) -> str:
+def schedule_workout(workout_id: str, date: str) -> dict:
     """
     Schedule a workout on Garmin Connect.
 
@@ -76,14 +76,35 @@ def schedule_workout(workout_id: str, date: str) -> str:
 
     endpoint = SCHEDULE_WORKOUT_ENDPOINT.format(workout_id=workout_id)
     result = garth.connectapi(endpoint, method="POST", json=payload)
-    workout_scheduled_id = result.get("scheduledWorkoutId")
+    workout_scheduled_id = result.get("workoutScheduleId")
     if workout_scheduled_id is None:
-        raise Exception("Scheduling workout failed")
+        raise Exception(f"Scheduling workout failed: {result}")
 
-    return str(workout_scheduled_id)
+    return {"workoutScheduleId": str(workout_scheduled_id)}
 
 @mcp.tool
-def upload_workout(workout_data: dict) -> str:
+def delete_workout(workout_id: str) -> bool:
+    """
+    Delete a workout from Garmin Connect.
+
+    Args:
+        workout_id: ID of the workout to delete.
+
+    Returns:
+        True if the deletion was successful, False otherwise.
+    """
+    endpoint = GET_WORKOUT_ENDPOINT.format(workout_id=workout_id)
+
+    try:
+        garth.connectapi(endpoint, method="DELETE")
+        logger.info("Workout %s deleted successfully", workout_id)
+        return True
+    except Exception as e:
+        logger.error("Failed to delete workout %s: %s", workout_id, e)
+        return False
+
+@mcp.tool
+def upload_workout(workout_data: dict) -> dict:
     """
     Uploads a structured workout to Garmin Connect.
 
@@ -117,13 +138,13 @@ def upload_workout(workout_data: dict) -> str:
         if workout_id is None:
             raise Exception("No workout ID returned")
 
-        return str(workout_id)
+        return {"workoutId": str(workout_id)}
 
     except Exception as e:
         raise Exception(f"Failed to upload workout to Garmin Connect: {str(e)}")
 
 @mcp.tool
-def generate_workout_data_prompt(description: str) -> str:
+def generate_workout_data_prompt(description: str) -> dict:
     """
     Generate prompt for LLM to create structured workout data based on a natural language description. The LLM
     should use the returned prompt to generate a JSON object that can then be used with the `upload_workout` tool.
@@ -135,7 +156,7 @@ def generate_workout_data_prompt(description: str) -> str:
         Prompt for the LLM to generate structured workout data
     """
 
-    return f"""
+    return {"prompt": f"""
     You are a fitness coach.
     Given the following workout description, create a structured JSON object that represents the workout.
     The generated JSON should be compatible with the `upload_workout` tool.
@@ -176,7 +197,7 @@ def generate_workout_data_prompt(description: str) -> str:
     - For 4:40 min/km pace: "value": 4.67 or "value": [4.5, 4.8]
     - For 160 bpm heart rate: "value": 160 or "value": [150, 170]
     - For no target: "type": "no target", "value": null, "unit": null
-    """
+    """}
 
 def login():
     """Login to Garmin Connect."""
