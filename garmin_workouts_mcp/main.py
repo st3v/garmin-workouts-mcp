@@ -2,12 +2,14 @@ from fastmcp import FastMCP
 import garth
 import sys
 import logging
+from datetime import datetime
 from getpass import getpass
 from .garmin_workout import make_payload
 
-WORKOUTS_ENDPOINT = "/workout-service/workouts"
-WORKOUT_ENDPOINT = "/workout-service/workout/{workout_id}"
+LIST_WORKOUTS_ENDPOINT = "/workout-service/workouts"
+GET_WORKOUT_ENDPOINT = "/workout-service/workout/{workout_id}"
 CREATE_WORKOUT_ENDPOINT = "/workout-service/workout"
+SCHEDULE_WORKOUT_ENDPOINT = "/workout-service/schedule/{workout_id}"
 
 # Set up logging
 logging.basicConfig(
@@ -21,16 +23,64 @@ mcp = FastMCP(name="GarminConnectWorkoutsServer")
 
 @mcp.tool
 def list_workouts() -> dict:
-    """List all workouts available on Garmin Connect."""
-    workouts = garth.connectapi(WORKOUTS_ENDPOINT)
+    """
+    List all workouts available on Garmin Connect.
+
+    Returns:
+        A dictionary containing a list of workouts.
+    """
+    workouts = garth.connectapi(LIST_WORKOUTS_ENDPOINT)
     return workouts
 
 @mcp.tool
 def get_workout(workout_id: str) -> dict:
-    """Get details of a specific workout by its ID."""
-    endpoint = WORKOUT_ENDPOINT.format(workout_id=workout_id)
+    """
+    Get details of a specific workout by its ID.
+
+    Args:
+        workout_id: ID of the workout to retrieve.
+
+    Returns:
+        Workout details as a dictionary.
+    """
+    endpoint = GET_WORKOUT_ENDPOINT.format(workout_id=workout_id)
     workout = garth.connectapi(endpoint)
     return workout
+
+@mcp.tool
+def schedule_workout(workout_id: str, date: str) -> dict:
+    """
+    Schedule a workout on Garmin Connect.
+
+    Args:
+        workout_id: ID of the workout to schedule.
+        date: Date to schedule the workout in ISO format (YYYY-MM-DD).
+
+    Returns:
+        workoutScheduleId: ID of the scheduled workout.
+
+    Raises:
+        ValueError: If the date format is incorrect.
+        Exception: If scheduling the workout fails.
+    """
+
+    # verify date format
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise ValueError("Date must be in ISO format (YYYY-MM-DD)")
+
+    payload = {
+        "date": date,
+    }
+
+    endpoint = SCHEDULE_WORKOUT_ENDPOINT.format(workout_id=workout_id)
+    result = garth.connectapi(endpoint, method="POST", json=payload)
+    workout_scheduled_id = result.get("scheduledWorkoutId")
+    if not workout_scheduled_id:
+        raise Exception("Scheduling workout failed")
+
+    return workout_scheduled_id
 
 @mcp.tool
 def upload_workout(workout_data: dict) -> str:

@@ -1,2 +1,4 @@
 fastmcp>=2.9.1
 garth>=0.5.17
+hatch>=1.14.1
+twine>=6.1.0
