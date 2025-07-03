@@ -301,6 +301,9 @@ def convert_target_values(step: dict, target_type_key: str) -> dict:
     target_value_one = convert_value_to_unit(min_value, step["target"].get("unit"))
     target_value_two = convert_value_to_unit(max_value, step["target"].get("unit"))
 
+    if target_value_one > target_value_two:
+        target_value_one, target_value_two = target_value_two, target_value_one
+
     return {"targetValueOne": target_value_one, "targetValueTwo": target_value_two}
 
 

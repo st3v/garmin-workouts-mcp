@@ -1,15 +1,13 @@
-.PHONY: help init clean build test release upload-test upload-prod
+.PHONY: help init clean build test test-unit test-integration release upload-test upload-prod
 
 # Default target
 help:
 	@echo "Available targets:"
-	@echo "  init        - Initialize development environment"
-	@echo "  clean       - Clean build artifacts"
-	@echo "  build       - Build the package"
-	@echo "  test        - Run tests (if any)"
-	@echo "  release     - Build and prepare for release"
-	@echo "  upload-test - Upload to TestPyPI"
-	@echo "  upload-prod - Upload to PyPI"
+	@echo "  init              - Initialize development environment"
+	@echo "  clean             - Clean build artifacts"
+	@echo "  build             - Build the package"
+	@echo "  test              - Run all tests"
+	@echo "  release           - Build and prepare for release"
 
 # Initialize development environment
 init:
@@ -29,9 +27,11 @@ clean:
 build: clean
 	hatch build
 
-# Run tests (placeholder for when tests are added)
+# Run tests
 test:
-	@echo "No tests configured yet"
+	python -m pytest tests/ -v --tb=short --cov=garmin_workouts_mcp --cov-report=term-missing
+
+tests: test
 
 # Build and prepare for release
 release: clean build
