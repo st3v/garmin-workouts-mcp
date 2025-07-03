@@ -8,17 +8,11 @@ from garmin_workouts_mcp.garmin_workout import (
     process_repeat_step,
     process_target,
     calculate_estimated_duration,
-    convert_target_values,
     calculate_value_range,
     calculate_pace_range,
     convert_value_to_unit,
     estimate_step_duration,
     calculate_steps_duration,
-    SPORT_TYPE_MAPPING,
-    STEP_TYPE_MAPPING,
-    TARGET_TYPE_MAPPING,
-    DISTANCE_UNIT_MAPPING,
-    END_CONDITION_TYPE_MAPPING,
     DEFAULT_PACE
 )
 

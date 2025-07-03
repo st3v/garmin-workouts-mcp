@@ -1,5 +1,4 @@
-from typing import Dict, Any, List, Tuple
-import math
+from typing import List, Tuple
 
 
 # Sport type mapping
