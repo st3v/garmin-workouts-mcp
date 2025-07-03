@@ -1,9 +1,9 @@
 from fastmcp import FastMCP
 import garth
+import os
 import sys
 import logging
 from datetime import datetime
-from getpass import getpass
 from .garmin_workout import make_payload
 
 LIST_WORKOUTS_ENDPOINT = "/workout-service/workouts"
@@ -201,11 +201,15 @@ def generate_workout_data_prompt(description: str) -> dict:
 
 def login():
     """Login to Garmin Connect."""
+    garth_home = os.environ.get("GARTH_HOME", "~/.garth")
     try:
-        garth.resume("~/.garth")
+        garth.resume(garth_home)
     except Exception:
-        email = input("Enter email address: ")
-        password = getpass("Enter password: ")
+        email = os.environ.get("GARMIN_EMAIL")
+        password = os.environ.get("GARMIN_PASSWORD")
+
+        if not email or not password:
+            raise ValueError("Garmin email and password must be provided via environment variables (GARMIN_EMAIL, GARMIN_PASSWORD).")
 
         try:
             garth.login(email, password)
@@ -214,7 +218,7 @@ def login():
             sys.exit(1)
 
         # Save credentials for future use
-        garth.save("~/.garth")
+        garth.save(garth_home)
 
 def main():
     """Main entry point for the console script."""

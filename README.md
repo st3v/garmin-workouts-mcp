@@ -99,7 +99,10 @@ The tool supports various workout types:
 
 ## Environment Variables
 
+- `GARMIN_EMAIL`: Your Garmin Connect email address (optional)
+- `GARMIN_PASSWORD`: Your Garmin Connect password (optional)
 - `GARTH_HOME`: Custom location for Garmin credentials (optional, defaults to `~/.garth`)
+
 
 ## Credits
 
