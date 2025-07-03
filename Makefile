@@ -33,6 +33,9 @@ test:
 
 tests: test
 
+lint:
+	ruff check .
+
 # Build and prepare for release
 release: clean build
 	@echo "Package built and ready for release"
