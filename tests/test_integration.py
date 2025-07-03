@@ -16,6 +16,7 @@ class TestMCPIntegration:
         expected_tools = {
             "list_workouts",
             "get_workout",
+            "get_calendar",
             "schedule_workout",
             "delete_workout",
             "upload_workout",
@@ -26,8 +27,13 @@ class TestMCPIntegration:
         assert isinstance(tools, dict)
         registered_tool_names = set(tools.keys())
 
-        # Assert all expected tools are registered
-        assert expected_tools.issubset(registered_tool_names), f"Missing tools: {expected_tools - registered_tool_names}"
+        # Assert exact match of tools (no missing, no unexpected)
+        missing_tools = expected_tools - registered_tool_names
+        unexpected_tools = registered_tool_names - expected_tools
+
+        assert not missing_tools, f"Missing tools: {missing_tools}"
+        assert not unexpected_tools, f"Unexpected tools: {unexpected_tools}"
+        assert expected_tools == registered_tool_names, f"Tool sets don't match. Expected: {expected_tools}, Found: {registered_tool_names}"
 
     def test_mcp_server_name(self):
         """Test that the MCP server has the correct name."""

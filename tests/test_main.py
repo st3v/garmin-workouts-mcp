@@ -204,7 +204,7 @@ class TestScheduleWorkout:
         with pytest.raises(Exception, match="API Error"):
             schedule_workout_func(workout_id, date)
 
-    
+
 
 
 class TestDeleteWorkout:
@@ -325,3 +325,164 @@ class TestUploadWorkout:
         # Act & Assert
         with pytest.raises(Exception, match="No workout ID returned"):
             upload_workout_func(workout_data)
+
+class TestGetCalendar:
+    """Test cases for the get_calendar tool."""
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_calendar_monthly_success(self, mock_connectapi):
+        """Test successful retrieval of monthly calendar data."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Arrange
+        year, month = 2025, 6
+        expected_calendar = {
+            "calendarItems": [
+                {
+                    "date": "2025-06-01",
+                    "workouts": [],
+                    "activities": []
+                }
+            ]
+        }
+        mock_connectapi.return_value = expected_calendar
+
+        # Act
+        result = get_calendar_func(year, month)
+
+        # Assert
+        mock_connectapi.assert_called_once_with("/calendar-service/year/2025/month/5")
+        assert result["calendar"] == expected_calendar
+        assert result["view_type"] == "month"
+        assert result["period"]["year"] == year
+        assert result["period"]["month"] == month
+        assert result["period"]["day"] is None
+        assert result["period"]["start"] is None
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_calendar_weekly_success(self, mock_connectapi):
+        """Test successful retrieval of weekly calendar data."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Arrange
+        year, month, day = 2025, 6, 10
+        expected_calendar = {
+            "calendarItems": [
+                {
+                    "date": "2025-06-10",
+                    "workouts": [{"workoutId": "123", "workoutName": "Morning Run"}],
+                    "activities": []
+                }
+            ]
+        }
+        mock_connectapi.return_value = expected_calendar
+
+        # Act
+        result = get_calendar_func(year, month, day)
+
+        # Assert
+        mock_connectapi.assert_called_once_with("/calendar-service/year/2025/month/5/day/10/start/1")
+        assert result["calendar"] == expected_calendar
+        assert result["view_type"] == "week"
+        assert result["period"]["year"] == year
+        assert result["period"]["month"] == month
+        assert result["period"]["day"] == day
+        assert result["period"]["start"] == 1
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_calendar_weekly_custom_start(self, mock_connectapi):
+        """Test weekly calendar with custom start parameter."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Arrange
+        year, month, day, start = 2025, 6, 10, 2
+        mock_connectapi.return_value = {}
+
+        # Act
+        result = get_calendar_func(year, month, day, start)
+
+        # Assert
+        mock_connectapi.assert_called_once_with("/calendar-service/year/2025/month/5/day/10/start/2")
+        assert result["view_type"] == "week"
+        assert result["period"]["start"] == 2
+
+    def test_get_calendar_invalid_year(self):
+        """Test get_calendar with invalid year."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Test year too low
+        with pytest.raises(ValueError, match="Year must be between 1900 and 2100, got 1899"):
+            get_calendar_func(1899, 6)
+
+        # Test year too high
+        with pytest.raises(ValueError, match="Year must be between 1900 and 2100, got 2101"):
+            get_calendar_func(2101, 6)
+
+    def test_get_calendar_invalid_month(self):
+        """Test get_calendar with invalid month."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Test month too low
+        with pytest.raises(ValueError, match="Month must be between 1 and 12, got 0"):
+            get_calendar_func(2025, 0)
+
+        # Test month too high
+        with pytest.raises(ValueError, match="Month must be between 1 and 12, got 13"):
+            get_calendar_func(2025, 13)
+
+    def test_get_calendar_invalid_day(self):
+        """Test get_calendar with invalid day."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Test day too low
+        with pytest.raises(ValueError, match="Day must be between 1 and 31, got 0"):
+            get_calendar_func(2025, 6, 0)
+
+        # Test day too high
+        with pytest.raises(ValueError, match="Day must be between 1 and 31, got 32"):
+            get_calendar_func(2025, 6, 32)
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_calendar_empty_response(self, mock_connectapi):
+        """Test get_calendar when API returns empty response."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Arrange
+        mock_connectapi.return_value = None
+
+        # Act
+        result = get_calendar_func(2025, 6)
+
+        # Assert
+        assert result["calendar"] is None
+        assert result["view_type"] == "month"
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_calendar_api_error(self, mock_connectapi):
+        """Test get_calendar when API raises an exception."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_calendar_func = main_module.get_calendar.fn
+
+        # Arrange
+        mock_connectapi.side_effect = Exception("API connection failed")
+
+        # Act & Assert
+        with pytest.raises(Exception, match="API connection failed"):
+            get_calendar_func(2025, 6)
+
+        mock_connectapi.assert_called_once_with("/calendar-service/year/2025/month/5")

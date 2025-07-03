@@ -10,6 +10,8 @@ LIST_WORKOUTS_ENDPOINT = "/workout-service/workouts"
 GET_WORKOUT_ENDPOINT = "/workout-service/workout/{workout_id}"
 CREATE_WORKOUT_ENDPOINT = "/workout-service/workout"
 SCHEDULE_WORKOUT_ENDPOINT = "/workout-service/schedule/{workout_id}"
+CALENDAR_WEEK_ENDPOINT = "/calendar-service/year/{year}/month/{month}/day/{day}/start/{start}"
+CALENDAR_MONTH_ENDPOINT = "/calendar-service/year/{year}/month/{month}"
 
 # Set up logging
 logging.basicConfig(
@@ -142,6 +144,72 @@ def upload_workout(workout_data: dict) -> dict:
 
     except Exception as e:
         raise Exception(f"Failed to upload workout to Garmin Connect: {str(e)}")
+
+@mcp.tool
+def get_calendar(year: int, month: int, day: int = None, start: int = 1) -> dict:
+    """
+    Get calendar data from Garmin Connect for different time periods.
+
+    Args:
+        year: Year (e.g., 2025)
+        month: Month (1-12)
+        day: Day of month (1-31). If provided, gets corresponding weekly view that includes this day.
+             If omitted, gets monthly view for the entire month.
+        start: Day offset for weekly queries (defaults to 1). Controls which day of the week
+               the 7-day period begins. Each increment shifts the start date forward by one day:
+               - start=0: Week starts on Sunday
+               - start=1: Week starts on Monday (DEFAULT)
+               - start=2: Week starts on Tuesday
+               - start=3: Week starts on Wednesday
+               - start=4: Week starts on Thursday
+               And so on. Different start values return different 7-day windows with varying
+               calendar items, useful for different training schedules and calendar preferences.
+
+    Returns:
+        Calendar data with workouts and activities for the specified period.
+
+    Raises:
+        ValueError: If any of the date parameters are invalid.
+    """
+    # Input validation
+    if not (1900 <= year <= 2100):
+        raise ValueError(f"Year must be between 1900 and 2100, got {year}")
+
+    if not (1 <= month <= 12):
+        raise ValueError(f"Month must be between 1 and 12, got {month}")
+
+    if day is not None:
+        if not (1 <= day <= 31):
+            raise ValueError(f"Day must be between 1 and 31, got {day}")
+
+    # Convert month from 1-based (human readable) to 0-based (Garmin API)
+    garmin_month = month - 1
+
+    if day is not None:
+        # Weekly view
+        endpoint = CALENDAR_WEEK_ENDPOINT.format(
+            year=year, month=garmin_month, day=day, start=start
+        )
+        view_type = "week"
+    else:
+        # Monthly view (default)
+        endpoint = CALENDAR_MONTH_ENDPOINT.format(
+            year=year, month=garmin_month
+        )
+        view_type = "month"
+
+    calendar_data = garth.connectapi(endpoint)
+
+    return {
+        "calendar": calendar_data,
+        "view_type": view_type,
+        "period": {
+            "year": year,
+            "month": month,
+            "day": day,
+            "start": start if day else None
+        }
+    }
 
 @mcp.tool
 def generate_workout_data_prompt(description: str) -> dict:
