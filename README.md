@@ -26,13 +26,59 @@ Add to your MCP client configuration:
   "mcpServers": {
     "garmin-workouts": {
       "command": "uvx",
-      "args": ["garmin-workouts-mcp"]
+      "args": ["garmin-workouts-mcp"],
+      "env": { # See Authentication section for details
+        "GARMIN_EMAIL": "your_email@example.com",
+        "GARMIN_PASSWORD": "your_password"
+      }
     }
   }
 }
 ```
 
-On first use, you'll be prompted to login to Garmin Connect. Upon successful login, access and refresh tokens will be stored locally for subsequent calls.
+## Authentication
+
+The Garmin Workouts MCP Server authenticates with Garmin Connect using `garth` [[https://github.com/matin/garth](https://github.com/matin/garth)]. There are two primary ways to provide your Garmin credentials:
+
+### 1. Using Environment Variables
+
+You can set your Garmin Connect email and password as environment variables before starting the MCP server.
+
+- `GARMIN_EMAIL`: Your Garmin Connect email address.
+- `GARMIN_PASSWORD`: Your Garmin Connect password.
+
+Example:
+```bash
+export GARMIN_EMAIL="your_email@example.com"
+export GARMIN_PASSWORD="your_password"
+uvx garmin-workouts-mcp
+```
+
+### 2. Out-of-Band Authentication with `garth`
+
+Alternatively, you can log in to Garmin Connect once using the `garth` library directly and save your authentication tokens to a directory, which the MCP server will then use for subsequent sessions. This method is useful if you prefer not to store your credentials as environment variables or as part of your MCP client configuration.
+
+To log in out-of-band:
+
+1.  Install `garth`:
+    ```bash
+    pip install garth
+    ```
+2.  Run the following Python script in your terminal:
+    ```python
+    import garth
+    from getpass import getpass
+
+    email = input("Enter email address: ")
+    password = getpass("Enter password: ")
+    # If there's MFA, you'll be prompted during the login
+    garth.login(email, password)
+
+    garth.save("~/.garth")
+    ```
+    Follow the prompts to enter your Garmin Connect email and password. Upon successful login, `garth` will save your authentication tokens to `~/.garth`.
+
+    The MCP server will automatically look for these saved tokens. If you wish to store them in a custom location, you can set the `GARTH_HOME` environment variable.
 
 ## Usage
 
