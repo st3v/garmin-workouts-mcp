@@ -7,6 +7,8 @@ An MCP server that allows you to create, list, and manage Garmin Connect workout
 - **Create workouts**: Generate structured Garmin workouts from natural language descriptions using AI
 - **List workouts**: View all your existing workouts on Garmin Connect
 - **Get workout details**: Retrieve detailed information about specific workouts
+- **Schedule workouts**: Schedule workouts on specific dates in Garmin Connect
+- **Delete workouts**: Remove workouts from Garmin Connect
 - **MCP Integration**: Works with any MCP-compatible client (Claude Desktop, etc.)
 
 ## Setup
@@ -50,6 +52,22 @@ Use the `upload_workout` tool to upload structured workout data to Garmin Connec
 
 ```
 upload_workout(workout_data_json)
+```
+
+### Schedule Workout
+
+Use the `schedule_workout` tool to schedule a workout on a specific date:
+
+```
+schedule_workout("workout_id_here", "2024-01-15")
+```
+
+### Delete Workout
+
+Use the `delete_workout` tool to remove a workout from Garmin Connect:
+
+```
+delete_workout("workout_id_here")
 ```
 
 ### List Workouts
