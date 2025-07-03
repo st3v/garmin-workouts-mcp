@@ -1,0 +1,29 @@
+name: CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get Python Version
+      id: python-version
+      run: echo "PYTHON_VERSION=$(cat .python-version)" >> $GITHUB_ENV
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run tests with coverage
+      run: make test
+
+    - name: Run linting checks
+      run: make lint

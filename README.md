@@ -1,5 +1,7 @@
 # Garmin Workouts MCP Server
 
+[![CI/CD Pipeline](https://github.com/st3v/garmin-workouts-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/st3v/garmin-workouts-mcp/actions/workflows/ci.yml)
+
 An MCP server that allows you to create, list, and manage Garmin Connect workouts using natural language descriptions through MCP-compatible clients.
 
 ## Features
