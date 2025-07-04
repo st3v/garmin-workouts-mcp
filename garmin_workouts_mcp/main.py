@@ -8,6 +8,9 @@ from .garmin_workout import make_payload
 
 LIST_WORKOUTS_ENDPOINT = "/workout-service/workouts"
 GET_WORKOUT_ENDPOINT = "/workout-service/workout/{workout_id}"
+GET_ACTIVITY_ENDPOINT = "/activity-service/activity/{activity_id}"
+GET_ACTIVITY_WEATHER_ENDPOINT = "/activity-service/activity/{activity_id}/weather"
+LIST_ACTIVITIES_ENDPOINT = "/activitylist-service/activities/search/activities"
 CREATE_WORKOUT_ENDPOINT = "/workout-service/workout"
 SCHEDULE_WORKOUT_ENDPOINT = "/workout-service/schedule/{workout_id}"
 CALENDAR_WEEK_ENDPOINT = "/calendar-service/year/{year}/month/{month}/day/{day}/start/{start}"
@@ -48,6 +51,70 @@ def get_workout(workout_id: str) -> dict:
     endpoint = GET_WORKOUT_ENDPOINT.format(workout_id=workout_id)
     workout = garth.connectapi(endpoint)
     return {"workout": workout}
+
+@mcp.tool
+def get_activity(activity_id: str) -> dict:
+    """
+    Get details of a specific activity by its ID. An activity represents a completed run, ride, swim, etc.
+
+    Args:
+        activity_id: ID of the activity to retrieve. As returned by the `get_calendar` tool.
+
+    Returns:
+        Activity details as a dictionary.
+    """
+    endpoint = GET_ACTIVITY_ENDPOINT.format(activity_id=activity_id)
+    activity = garth.connectapi(endpoint)
+    return activity
+
+@mcp.tool
+def list_activities(limit: int = 20, start: int = 0, activityType: str = None, search: str = None) -> dict:
+    """
+    List activities (completed runs, rides, swims, etc.) from Garmin Connect.
+
+    Args:
+        limit: Number of activities to return (default=20)
+        start: Starting position for pagination (default=0)
+        activityType: Filter by activity type. Accepted values include:
+            - "auto_racing", "backcountry_skiing_snowboarding_ws", "bouldering", "breathwork"
+            - "cross_country_skiing_ws", "cycling", "diving", "e_sport", "fitness_equipment"
+            - "hiking", "indoor_climbing", "motorcycling", "multi_sport", "offshore_grinding"
+            - "onshore_grinding", "other", "resort_skiing_snowboarding_ws", "running"
+            - "safety", "skate_skiing_ws", "surfing", "swimming", "walking"
+            - "windsurfing", "winter_sports", "yoga"
+        search: Search for activities containing this string in their name
+
+    Returns:
+        A dictionary containing a list of activities and pagination info.
+    """
+    params = {
+        "limit": limit,
+        "start": start
+    }
+
+    if activityType is not None:
+        params["activityType"] = activityType
+
+    if search is not None:
+        params["search"] = search
+
+    activities = garth.connectapi(LIST_ACTIVITIES_ENDPOINT, "GET", params=params)
+    return {"activities": activities}
+
+@mcp.tool
+def get_activity_weather(activity_id: str) -> dict:
+    """
+    Get weather information for a specific activity.
+
+    Args:
+        activity_id: ID of the activity to retrieve weather for.
+
+    Returns:
+        Weather details as a dictionary containing temperature, conditions, etc.
+    """
+    endpoint = GET_ACTIVITY_WEATHER_ENDPOINT.format(activity_id=activity_id)
+    weather = garth.connectapi(endpoint)
+    return weather
 
 @mcp.tool
 def schedule_workout(workout_id: str, date: str) -> dict:

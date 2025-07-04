@@ -16,6 +16,9 @@ class TestMCPIntegration:
         expected_tools = {
             "list_workouts",
             "get_workout",
+            "get_activity",
+            "list_activities",
+            "get_activity_weather",
             "get_calendar",
             "schedule_workout",
             "delete_workout",

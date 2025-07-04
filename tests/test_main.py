@@ -253,6 +253,346 @@ class TestDeleteWorkout:
         assert result is False
 
 
+class TestGetActivity:
+    """Test cases for the get_activity tool."""
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_success(self, mock_connectapi):
+        """Test successful retrieval of a specific activity."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_func = main_module.get_activity.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        expected_activity = {
+            "activityId": activity_id,
+            "activityName": "Morning Run",
+            "activityType": {"typeKey": "running"},
+            "distance": 5000,
+            "duration": 1800,
+            "startTimeLocal": "2024-07-04T06:00:00.000"
+        }
+        mock_connectapi.return_value = expected_activity
+
+        # Act
+        result = get_activity_func(activity_id)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}")
+        assert result == expected_activity
+        assert result["activityId"] == activity_id
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_not_found(self, mock_connectapi):
+        """Test get_activity when the activity is not found."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_func = main_module.get_activity.fn
+
+        # Arrange
+        activity_id = "non_existent_id"
+        mock_connectapi.return_value = None
+
+        # Act
+        result = get_activity_func(activity_id)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}")
+        assert result is None
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_api_error(self, mock_connectapi):
+        """Test get_activity when the API call fails."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_func = main_module.get_activity.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        mock_connectapi.side_effect = Exception("API Error")
+
+        # Act & Assert
+        with pytest.raises(Exception, match="API Error"):
+            get_activity_func(activity_id)
+
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}")
+
+
+class TestListActivities:
+    """Test cases for the list_activities tool."""
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_default_params(self, mock_connectapi):
+        """Test listing activities with default parameters."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        expected_activities = [
+            {
+                "activityId": "12345678901",
+                "activityName": "Morning Run",
+                "activityType": {"typeKey": "running"},
+                "distance": 5000,
+                "duration": 1800
+            },
+            {
+                "activityId": "12345678902",
+                "activityName": "Evening Bike Ride",
+                "activityType": {"typeKey": "cycling"},
+                "distance": 20000,
+                "duration": 3600
+            }
+        ]
+        mock_connectapi.return_value = expected_activities
+
+        # Act
+        result = list_activities_func()
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 20, "start": 0}
+        )
+        assert result == {"activities": expected_activities}
+        assert len(result["activities"]) == 2
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_with_pagination(self, mock_connectapi):
+        """Test listing activities with custom pagination parameters."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        expected_activities = []
+        mock_connectapi.return_value = expected_activities
+
+        # Act
+        result = list_activities_func(limit=50, start=100)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 50, "start": 100}
+        )
+        assert result == {"activities": expected_activities}
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_with_activity_type_filter(self, mock_connectapi):
+        """Test listing activities filtered by activity type."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        expected_activities = [
+            {
+                "activityId": "12345678901",
+                "activityName": "Morning Run",
+                "activityType": {"typeKey": "running"}
+            }
+        ]
+        mock_connectapi.return_value = expected_activities
+
+        # Act
+        result = list_activities_func(activityType="running")
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 20, "start": 0, "activityType": "running"}
+        )
+        assert result == {"activities": expected_activities}
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_with_search_filter(self, mock_connectapi):
+        """Test listing activities filtered by search term."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        expected_activities = [
+            {
+                "activityId": "12345678901",
+                "activityName": "Morning Run",
+                "activityType": {"typeKey": "running"}
+            }
+        ]
+        mock_connectapi.return_value = expected_activities
+
+        # Act
+        result = list_activities_func(search="Morning")
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 20, "start": 0, "search": "Morning"}
+        )
+        assert result == {"activities": expected_activities}
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_with_all_filters(self, mock_connectapi):
+        """Test listing activities with all filters applied."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        expected_activities = []
+        mock_connectapi.return_value = expected_activities
+
+        # Act
+        result = list_activities_func(
+            limit=10,
+            start=5,
+            activityType="cycling",
+            search="bike"
+        )
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 10, "start": 5, "activityType": "cycling", "search": "bike"}
+        )
+        assert result == {"activities": expected_activities}
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_empty_result(self, mock_connectapi):
+        """Test listing activities when no activities are found."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        mock_connectapi.return_value = []
+
+        # Act
+        result = list_activities_func()
+
+        # Assert
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 20, "start": 0}
+        )
+        assert result == {"activities": []}
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_list_activities_api_error(self, mock_connectapi):
+        """Test list_activities when the API call fails."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        list_activities_func = main_module.list_activities.fn
+
+        # Arrange
+        mock_connectapi.side_effect = Exception("API connection failed")
+
+        # Act & Assert
+        with pytest.raises(Exception, match="API connection failed"):
+            list_activities_func()
+
+        mock_connectapi.assert_called_once_with(
+            "/activitylist-service/activities/search/activities",
+            "GET",
+            params={"limit": 20, "start": 0}
+        )
+
+
+class TestGetActivityWeather:
+    """Test cases for the get_activity_weather tool."""
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_weather_success(self, mock_connectapi):
+        """Test successful retrieval of activity weather data."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_weather_func = main_module.get_activity_weather.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        expected_weather = {
+            "temperature": 22.5,
+            "temperatureUnit": "celsius",
+            "humidity": 65,
+            "windSpeed": 8.5,
+            "windDirection": "NE",
+            "weatherCondition": "partly_cloudy",
+            "issueTime": "2024-07-04T06:00:00.000Z"
+        }
+        mock_connectapi.return_value = expected_weather
+
+        # Act
+        result = get_activity_weather_func(activity_id)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}/weather")
+        assert result == expected_weather
+        assert result["temperature"] == 22.5
+        assert result["weatherCondition"] == "partly_cloudy"
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_weather_no_data(self, mock_connectapi):
+        """Test get_activity_weather when no weather data is available."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_weather_func = main_module.get_activity_weather.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        mock_connectapi.return_value = None
+
+        # Act
+        result = get_activity_weather_func(activity_id)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}/weather")
+        assert result is None
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_weather_api_error(self, mock_connectapi):
+        """Test get_activity_weather when the API call fails."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_weather_func = main_module.get_activity_weather.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        mock_connectapi.side_effect = Exception("Weather service unavailable")
+
+        # Act & Assert
+        with pytest.raises(Exception, match="Weather service unavailable"):
+            get_activity_weather_func(activity_id)
+
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}/weather")
+
+    @patch('garmin_workouts_mcp.main.garth.connectapi')
+    def test_get_activity_weather_empty_response(self, mock_connectapi):
+        """Test get_activity_weather when API returns empty response."""
+        # Import the actual function, not the FunctionTool wrapper
+        import garmin_workouts_mcp.main as main_module
+        get_activity_weather_func = main_module.get_activity_weather.fn
+
+        # Arrange
+        activity_id = "12345678901"
+        mock_connectapi.return_value = {}
+
+        # Act
+        result = get_activity_weather_func(activity_id)
+
+        # Assert
+        mock_connectapi.assert_called_once_with(f"/activity-service/activity/{activity_id}/weather")
+        assert result == {}
+
+
 class TestGenerateWorkoutDataPrompt:
     """Test cases for the generate_workout_data_prompt tool."""
 
