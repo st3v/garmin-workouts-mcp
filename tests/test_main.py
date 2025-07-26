@@ -666,6 +666,8 @@ class TestUploadWorkout:
         with pytest.raises(Exception, match="No workout ID returned"):
             upload_workout_func(workout_data)
 
+
+
 class TestGetCalendar:
     """Test cases for the get_calendar tool."""
 

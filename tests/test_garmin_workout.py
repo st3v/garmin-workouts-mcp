@@ -58,19 +58,19 @@ def test_make_payload_running_workout_detailed():
     assert payload["workoutName"] == "My Detailed Running Workout"
     assert payload["sportType"]["sportTypeKey"] == "running"
     assert len(payload["workoutSegments"][0]["workoutSteps"]) == 3
-    
+
     warmup_step = payload["workoutSegments"][0]["workoutSteps"][0]
     assert warmup_step["stepType"]["stepTypeKey"] == "warmup"
     assert warmup_step["endCondition"]["conditionTypeKey"] == "time"
     assert warmup_step["endConditionValue"] == 600
-    
+
     run_step = payload["workoutSegments"][0]["workoutSteps"][1]
     assert run_step["stepType"]["stepTypeKey"] == "interval"
     assert run_step["targetType"]["workoutTargetTypeKey"] == "pace.zone"
     assert run_step["endCondition"]["conditionTypeKey"] == "time"
     assert run_step["endConditionValue"] == 1800
-    assert run_step["targetValueOne"] == 1000 / (7.0 * 60)
-    assert run_step["targetValueTwo"] == 1000 / (6.0 * 60)
+    assert run_step["targetValueOne"] == 1000 / (6.0 * 60)
+    assert run_step["targetValueTwo"] == 1000 / (7.0 * 60)
 
 def test_make_payload_cycling_workout_detailed():
     workout_data = {
@@ -260,3 +260,93 @@ def test_calculate_steps_duration_mixed_steps():
     duration = calculate_steps_duration(steps, "running")
     expected_duration = 300 + int(500 * (2 / (2.77 + 3.33))) + 2 * (60 + int(100 * (2 / (2.77 + 3.33))))
     assert duration == expected_duration
+
+
+def test_make_payload_structured_easy_run():
+    """Test make_payload with a structured easy run workout containing warmup, main run, and cooldown."""
+    workout_data = {
+        "name": "W02 Tue - Easy Run - 8k",
+        "type": "running",
+        "steps": [
+            {
+                "stepName": "Warm-up",
+                "stepType": "warmup",
+                "endConditionType": "time",
+                "stepDuration": 300,
+                "target": {
+                    "type": "pace",
+                    "value": [
+                        6.83,
+                        6.37
+                    ],
+                    "unit": "min_per_km"
+                }
+            },
+            {
+                "stepName": "Run",
+                "stepType": "interval",
+                "endConditionType": "distance",
+                "stepDistance": 7,
+                "distanceUnit": "km",
+                "target": {
+                    "type": "pace",
+                    "value": [
+                        6.28,
+                        5.68
+                    ],
+                    "unit": "min_per_km"
+                }
+            },
+            {
+                "stepName": "Cool-down",
+                "stepType": "cooldown",
+                "endConditionType": "time",
+                "stepDuration": 300,
+                "target": {
+                    "type": "pace",
+                    "value": [
+                        6.83,
+                        6.37
+                    ],
+                    "unit": "min_per_km"
+                }
+            }
+        ]
+    }
+
+    payload = make_payload(workout_data)
+
+    # Test basic workout properties
+    assert payload["workoutName"] == "W02 Tue - Easy Run - 8k"
+    assert payload["sportType"]["sportTypeKey"] == "running"
+    assert len(payload["workoutSegments"][0]["workoutSteps"]) == 3
+
+    # Test warmup step
+    warmup_step = payload["workoutSegments"][0]["workoutSteps"][0]
+    assert warmup_step["stepType"]["stepTypeKey"] == "warmup"
+    assert warmup_step["endCondition"]["conditionTypeKey"] == "time"
+    assert warmup_step["endConditionValue"] == 300
+    assert warmup_step["targetType"]["workoutTargetTypeKey"] == "pace.zone"
+    # targetValueOne should be the faster pace (6.37 min/km), targetValueTwo the slower (6.83 min/km)
+    assert warmup_step["targetValueOne"] == pytest.approx(1000 / (6.37 * 60))
+    assert warmup_step["targetValueTwo"] == pytest.approx(1000 / (6.83 * 60))
+
+    # Test main run step
+    run_step = payload["workoutSegments"][0]["workoutSteps"][1]
+    assert run_step["stepType"]["stepTypeKey"] == "interval"
+    assert run_step["endCondition"]["conditionTypeKey"] == "distance"
+    assert run_step["endConditionValue"] == 7000  # 7km converted to meters
+    assert run_step["targetType"]["workoutTargetTypeKey"] == "pace.zone"
+    # targetValueOne should be the faster pace (5.68 min/km), targetValueTwo the slower (6.28 min/km)
+    assert run_step["targetValueOne"] == pytest.approx(1000 / (5.68 * 60))
+    assert run_step["targetValueTwo"] == pytest.approx(1000 / (6.28 * 60))
+
+    # Test cooldown step
+    cooldown_step = payload["workoutSegments"][0]["workoutSteps"][2]
+    assert cooldown_step["stepType"]["stepTypeKey"] == "cooldown"
+    assert cooldown_step["endCondition"]["conditionTypeKey"] == "time"
+    assert cooldown_step["endConditionValue"] == 300
+    assert cooldown_step["targetType"]["workoutTargetTypeKey"] == "pace.zone"
+    # targetValueOne should be the faster pace (6.37 min/km), targetValueTwo the slower (6.83 min/km)
+    assert cooldown_step["targetValueOne"] == pytest.approx(1000 / (6.37 * 60))
+    assert cooldown_step["targetValueTwo"] == pytest.approx(1000 / (6.83 * 60))

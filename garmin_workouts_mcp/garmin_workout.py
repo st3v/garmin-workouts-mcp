@@ -300,8 +300,16 @@ def convert_target_values(step: dict, target_type_key: str) -> dict:
     target_value_one = convert_value_to_unit(min_value, step["target"].get("unit"))
     target_value_two = convert_value_to_unit(max_value, step["target"].get("unit"))
 
-    if target_value_one > target_value_two:
-        target_value_one, target_value_two = target_value_two, target_value_one
+    # For pace targets, ensure targetValueOne is always the faster pace (higher m/s value)
+    # and targetValueTwo is always the slower pace (lower m/s value)
+    if target_type_key == "pace":
+        # After conversion, higher m/s value = faster pace, lower m/s value = slower pace
+        if target_value_one < target_value_two:
+            target_value_one, target_value_two = target_value_two, target_value_one
+    else:
+        # For other target types, ensure targetValueOne <= targetValueTwo
+        if target_value_one > target_value_two:
+            target_value_one, target_value_two = target_value_two, target_value_one
 
     return {"targetValueOne": target_value_one, "targetValueTwo": target_value_two}
 
